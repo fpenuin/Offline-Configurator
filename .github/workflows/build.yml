@@ -24,7 +24,7 @@ jobs:
         version: '5.15.2'
         host: 'windows'
         target: 'desktop'
-        arch: 'win64_mingw'
+        arch: 'win64_mingw81'
         # modules: 'qtserialport'
         tools: 'tools_mingw90'
         cache: true
@@ -32,7 +32,7 @@ jobs:
     - name: Build
       shell: cmd
       run: |
-        set PATH=%IQTA_TOOLS%\mingw1120_64\bin;%PATH%
+        set PATH=%IQTA_TOOLS%\mingw81_64\bin;%PATH%
         mkdir build
         cd build
         qmake ..\SerialPortConnector.pro CONFIG+=release
