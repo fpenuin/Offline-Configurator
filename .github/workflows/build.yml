@@ -25,7 +25,7 @@ jobs:
         host: 'windows'
         target: 'desktop'
         arch: 'win64_mingw'
-        modules: 'qtserialport'
+        # modules: 'qtserialport'
         tools: 'tools_mingw90'
         cache: true
 
@@ -95,7 +95,7 @@ jobs:
         host: 'linux'
         target: 'desktop'
         arch: 'gcc_64'
-        modules: 'qtserialport'
+        # modules: 'qtserialport'
         cache: true
 
     - name: Build
