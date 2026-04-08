@@ -43,29 +43,34 @@ jobs:
       run: |
         mkdir deploy
         copy build\release\SerialPortConnector.exe deploy\
-        # set PATH=%IQTA_TOOLS%\mingw81_64\bin;%PATH%
-        # windeployqt --release deploy\SerialPortConnector.exe
-        set PATH=%QT_ROOT_DIR%\5.15.2\mingw81_64\bin;%IQTA_TOOLS%\mingw81_64\bin;%PATH%
-        
-        # mkdir deploy\platforms
-        # copy "%QT_ROOT_DIR%\5.15.2\mingw81_64\plugins\platforms\qwindows.dll" deploy\platforms\ 2>nul || true
-        
-        windeployqt --no-quick-import ^
-          --no-translations ^
-          --no-system-d3d-compiler ^
-          --no-compiler-runtime ^
-          deploy\SerialPortConnector.exe
 
-        :: 手动复制 MinGW 运行时 DLL 
-        echo Copying MinGW runtime DLLs...
-        copy "%IQTA_TOOLS%\mingw81_64\bin\libgcc_s_seh-1.dll"   deploy\ 2>nul || echo Warning: libgcc_s_seh-1.dll not found
-        copy "%IQTA_TOOLS%\mingw81_64\bin\libstdc++-6.dll"      deploy\ 2>nul || echo Warning: libstdc++-6.dll not found
-        copy "%IQTA_TOOLS%\mingw81_64\bin\libwinpthread-1.dll"  deploy\ 2>nul || echo Warning: libwinpthread-1.dll not found
-  
-        :: 显示部署结果（便于下次调试）
-        echo --- Deployed files ---
+        :: 设置 PATH（包含 Qt 和所有可能的 MinGW 目录）
+        set PATH=%QT_ROOT_DIR%\5.15.2\mingw81_64\bin;%IQTA_TOOLS%\mingw81_64\bin;%IQTA_TOOLS%\mingw810_64\bin;%IQTA_TOOLS%\mingw1120_64\bin;%PATH%
+    
+        :: 运行 windeployqt（Qt 部分）
+        windeployqt --no-quick-import --no-translations --no-system-d3d-compiler --no-compiler-runtime deploy\SerialPortConnector.exe
+    
+        :: 自动复制 MinGW 运行时 DLL（尝试所有常见目录）
+        echo === Copying MinGW runtime DLLs from possible paths ===
+        for %%D in (
+          %IQTA_TOOLS%\mingw81_64\bin
+          %IQTA_TOOLS%\mingw810_64\bin
+          %IQTA_TOOLS%\mingw1120_64\bin
+        ) do (
+          if exist "%%D" (
+            echo Found MinGW at: %%D
+            copy "%%D\libgcc_s_seh-1.dll"   deploy\ 2>nul || true
+            copy "%%D\libstdc++-6.dll"      deploy\ 2>nul || true
+            copy "%%D\libwinpthread-1.dll"  deploy\ 2>nul || true
+          )
+        )
+
+        :: 显示最终部署结果（非常重要，用于调试）
+        echo.
+        echo === Final deployed files ===
         dir deploy
-        echo --- Platforms ---
+        echo.
+        echo === Platforms folder ===
         dir deploy\platforms 2>nul || echo No platforms folder!
 
     - name: Upload Windows artifact
