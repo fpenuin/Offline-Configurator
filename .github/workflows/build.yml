@@ -26,7 +26,7 @@ jobs:
         target: 'desktop'
         arch: 'win64_mingw81'
         # modules: 'qtserialport'
-        tools: 'tools_mingw90'
+        tools: 'tools_mingw'
         cache: true
 
     - name: Build
