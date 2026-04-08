@@ -43,11 +43,25 @@ jobs:
       run: |
         mkdir deploy
         copy build\release\SerialPortConnector.exe deploy\
-        set PATH=%IQTA_TOOLS%\mingw81_64\bin;%PATH%
-        windeployqt --release deploy\SerialPortConnector.exe
+        # set PATH=%IQTA_TOOLS%\mingw81_64\bin;%PATH%
+        # windeployqt --release deploy\SerialPortConnector.exe
+        set PATH=%QT_ROOT_DIR%\5.15.2\mingw81_64\bin;%IQTA_TOOLS%\mingw81_64\bin;%PATH%
+        
+        # mkdir deploy\platforms
+        # copy "%QT_ROOT_DIR%\5.15.2\mingw81_64\plugins\platforms\qwindows.dll" deploy\platforms\ 2>nul || true
+        
+        windeployqt ^
+          --no-quick-import ^
+          --no-translations ^
+          --no-system-d3d-compiler ^
+          --no-compiler-runtime ^
+          deploy\SerialPortConnector.exe
 
-        mkdir deploy\platforms
-        copy "%QT_ROOT_DIR%\5.15.2\mingw81_64\plugins\platforms\qwindows.dll" deploy\platforms\ 2>nul || true
+        :: 显示部署结果，便于调试
+        echo --- Deployed files ---
+        dir deploy
+        echo --- Platforms folder ---
+        dir deploy\platforms 2>nul || echo [Warning] No platforms folder!
 
     - name: Upload Windows artifact
       uses: actions/upload-artifact@v4
