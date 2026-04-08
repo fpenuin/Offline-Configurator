@@ -50,18 +50,23 @@ jobs:
         # mkdir deploy\platforms
         # copy "%QT_ROOT_DIR%\5.15.2\mingw81_64\plugins\platforms\qwindows.dll" deploy\platforms\ 2>nul || true
         
-        windeployqt ^
-          --no-quick-import ^
+        windeployqt --no-quick-import ^
           --no-translations ^
           --no-system-d3d-compiler ^
           --no-compiler-runtime ^
           deploy\SerialPortConnector.exe
 
-        :: 显示部署结果，便于调试
+        :: 手动复制 MinGW 运行时 DLL 
+        echo Copying MinGW runtime DLLs...
+        copy "%IQTA_TOOLS%\mingw81_64\bin\libgcc_s_seh-1.dll"   deploy\ 2>nul || echo Warning: libgcc_s_seh-1.dll not found
+        copy "%IQTA_TOOLS%\mingw81_64\bin\libstdc++-6.dll"      deploy\ 2>nul || echo Warning: libstdc++-6.dll not found
+        copy "%IQTA_TOOLS%\mingw81_64\bin\libwinpthread-1.dll"  deploy\ 2>nul || echo Warning: libwinpthread-1.dll not found
+  
+        :: 显示部署结果（便于下次调试）
         echo --- Deployed files ---
         dir deploy
-        echo --- Platforms folder ---
-        dir deploy\platforms 2>nul || echo [Warning] No platforms folder!
+        echo --- Platforms ---
+        dir deploy\platforms 2>nul || echo No platforms folder!
 
     - name: Upload Windows artifact
       uses: actions/upload-artifact@v4
