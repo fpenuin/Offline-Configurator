@@ -51,39 +51,52 @@ jobs:
         cp build/release/SerialPortConnector.exe deploy/
         export PATH="/mingw64/bin:$PATH"
         
-        # 1. 让 windeployqt 处理 Qt 插件（platforms, styles 等）
-        windeployqt-qt5.exe --release --no-compiler-runtime --no-opengl-sw --no-translations deploy/*.exe
+        # 1. 运行 windeployqt
+        windeployqt-qt5.exe --release --no-compiler-runtime --no-opengl-sw --no-translations deploy/*.exe || echo "windeployqt warning"
 
-        # 2. 递归提取所有 MinGW DLL 依赖
-        echo "Starting recursive dependency extraction..."
+        # 2. 递归补全 MinGW 缺失的依赖
+        echo "Starting recursive dependency check..."
         
-        # 初始检查列表：exe 和已经被拷入的 Qt dll
-        cp /mingw64/bin/libwinpthread-1.dll deploy/ -n # 强制补一个基础库
-
-        MAX_ITERATIONS=5
-        for i in $(seq 1 $MAX_ITERATIONS); do
-            echo "Iteration $i: Checking for missing dependencies..."
-            MISSING_DLLS=$(ldd deploy/*.exe deploy/*.dll 2>/dev/null | grep "not found" | awk '{print $1}' | sort -u)
-            
-            # 如果没有缺失的了，提前退出
-            if [ -z "$MISSING_DLLS" ]; then
-                echo "All dependencies resolved."
-                break
+        # 核心：使用循环直到没有 'not found'
+        for i in {1..5}; do
+          echo "Iteration $i"
+          # 找出当前所有缺失的 dll 名
+          # 使用 || true 防止因为 grep 没找到东西而报错
+          MISSING=$(ldd deploy/*.exe deploy/*.dll 2>/dev/null | grep "not found" | awk '{print $1}' | sort -u) || true
+          
+          if [ -z "$MISSING" ]; then
+            echo "All dependencies found."
+            break
+          fi
+          
+          for dll in $MISSING; do
+            if [ -f "/mingw64/bin/$dll" ]; then
+              echo "Fixing: $dll"
+              cp "/mingw64/bin/$dll" deploy/
             fi
-            
-            for dll in $MISSING_DLLS; do
-                if [ -f "/mingw64/bin/$dll" ]; then
-                    echo "Adding: $dll"
-                    cp "/mingw64/bin/$dll" deploy/
-                else
-                    echo "Warning: $dll not found in /mingw64/bin/"
-                fi
-            done
+          done
         done
 
-        # 3. 最后检查一下 libgcc 和 libstdc++ (windeployqt 有时会漏)
-        cp /mingw64/bin/libgcc_s_seh-1.dll deploy/ -n
-        cp /mingw64/bin/libstdc++-6.dll deploy/ -n
+        # 3. 强力补丁：手动补上那些 windeployqt 经常搞丢的底层库
+        # 这些库是 MinGW 程序运行的“基石”
+        EXTRA_LIBS=(
+          "libwinpthread-1.dll"
+          "libgcc_s_seh-1.dll"
+          "libstdc++-6.dll"
+          "zlib1.dll"
+          "libpcre2-8-0.dll"
+          "libpcre2-16-0.dll"
+        )
+        
+        for lib in "${EXTRA_LIBS[@]}"; do
+          if [ -f "/mingw64/bin/$lib" ]; then
+            cp -n "/mingw64/bin/$lib" deploy/
+          fi
+        done
+        
+        echo "Final check:"
+        ls deploy/
+
         
     - name: Upload Windows artifact
       uses: actions/upload-artifact@v4
