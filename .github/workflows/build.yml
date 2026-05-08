@@ -50,32 +50,21 @@ jobs:
         mkdir -p deploy
         cp build/release/SerialPortConnector.exe deploy/
         export PATH="/mingw64/bin:$PATH"
-        windeployqt-qt5.exe \
-          --release \
-          --compiler-runtime \
-          --no-opengl-sw \
-          deploy/*.exe
-          
-        echo "Copying missing runtime libraries..."
-        cp /mingw64/bin/libmd4c.dll deploy/ || true
-        cp /mingw64/bin/libharfbuzz-0.dll deploy/ || true
-        cp /mingw64/bin/libdouble-conversion.dll deploy/ || true
-        cp /mingw64/bin/libicuin*.dll deploy/ || true
-        cp /mingw64/bin/libicuuc*.dll deploy/ || true
-        cp /mingw64/bin/libicudt*.dll deploy/ || true
-        cp /mingw64/bin/libpcre2-16-0.dll deploy/ || true
-        cp /mingw64/bin/libzstd.dll deploy/ || true
-        cp /mingw64/bin/libgraphite2.dll deploy/ || true
-        cp /mingw64/bin/libintl-8.dll deploy/ || true
-        cp /mingw64/bin/libiconv-2.dll deploy/ || true
-        cp /mingw64/bin/libglib-2.0-0.dll deploy/ || true
-        cp /mingw64/bin/libpng16-16.dll deploy/ || true
-        cp /mingw64/bin/libfreetype-6.dll deploy/ || true
-        cp /mingw64/bin/libbz2-1.dll deploy/ || true
-        cp /mingw64/bin/zlib1.dll deploy/
-        cp /mingw64/bin/libbrotlidec.dll deploy/
-        cp /mingw64/bin/libbrotlicommon.dll deploy/ || true
-        cp /mingw64/bin/lib*.dll deploy/
+        
+        # 1. 先运行基础部署（处理 platforms/ 插件等文件夹）
+        windeployqt-qt5.exe --release --no-compiler-runtime --no-opengl-sw --no-translations deploy/*.exe
+
+        # 2. 自动化依赖提取 (核心逻辑)
+        # 使用 ldd 递归查找所有位于 /mingw64/bin 下的依赖库，并拷贝到 deploy 目录
+        echo "Searching for all dynamic dependencies..."
+        
+        # 这是一个循环逻辑：找出 exe 依赖的所有 mingw64 路径下的 dll，并复制
+        # 我们对 exe 和刚才 windeployqt 拷进去的 qt dll 都做一次检查
+        FILES_TO_CHECK=$(find deploy -name "*.exe" -o -name "*.dll")
+        
+        for file in $FILES_TO_CHECK; do
+            ldd "$file" | grep "/mingw64/bin/" | awk '{print $3}' | xargs -I {} cp -n {} deploy/
+        done
         
     - name: Upload Windows artifact
       uses: actions/upload-artifact@v4
