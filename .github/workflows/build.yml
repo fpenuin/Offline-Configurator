@@ -51,16 +51,17 @@ jobs:
 
     - name: Deploy
       run: |
-        set -e
+        #set -e
         mkdir -p deploy
 
-        EXE=$(find build -name "*.exe" | grep -i "release" | head -n 1)
-        [ -z "$EXE" ] && EXE=$(find build -name "*.exe" | head -n 1)
-        cp "$EXE" deploy/
+        #EXE=$(find build -name "*.exe" | grep -i "release" | head -n 1)
+        #[ -z "$EXE" ] && EXE=$(find build -name "*.exe" | head -n 1)
+        #cp "$EXE" deploy/
+        copy build\release\SerialPortConnector.exe deploy\
 
         export PATH="/mingw64/bin:$PATH"
         
-        /mingw64/bin/windeployqt-qt5.exe \
+        windeployqt-qt5.exe \
           --release \
           --compiler-runtime \
           --no-opengl \
@@ -68,7 +69,7 @@ jobs:
           --no-translations \
           deploy/*.exe
 
-    - name: Upload artifact
+    - name: Upload Windows artifact
       uses: actions/upload-artifact@v4
       with:
         name: SerialPortConnector-Windows
