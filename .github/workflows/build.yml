@@ -68,30 +68,22 @@ jobs:
       run: |
         set -e
         mkdir -p deploy
-        
-        # 1. 寻找生成的 exe
+
         EXE=$(find build -name "*.exe" | grep -i "release" | head -n 1)
         [ -z "$EXE" ] && EXE=$(find build -name "*.exe" | head -n 1)
-        
-        echo "Found exe: $EXE"
         cp "$EXE" deploy/
 
-        # 2. 核心：全系统搜索 windeployqt
-        # 搜索所有包含 windeploy 关键字的可执行文件
-        WINDEPLOY=$(find /mingw64/ -name "windeployqt*" -type f | head -n 1)
-        
-        if [ -z "$WINDEPLOY" ]; then
-          echo "ERROR: windeployqt not found in /mingw64/"
-          ls -R /mingw64/bin | grep deploy
-          exit 1
-        fi
-
-        echo "Using deploy tool: $WINDEPLOY"
-
-        # 3. 执行部署
-        # 注入 PATH 是为了让 windeployqt 能找到它依赖的 DLL
         export PATH="/mingw64/bin:$PATH"
-        "$WINDEPLOY" --release --compiler-runtime --verbose 1 deploy/*.exe
+        
+        # 核心改动：添加 --no-opengl-sw 参数绕过缺失的 GLES DLL
+        # 添加 --compiler-runtime 确保带上 libgcc/libstdc++
+        /mingw64/bin/windeployqt-qt5.exe \
+          --release \
+          --compiler-runtime \
+          --no-opengl-sw \
+          --no-translations \
+          --verbose 1 \
+          deploy/*.exe
 
     # =========================
     # 4. Package
