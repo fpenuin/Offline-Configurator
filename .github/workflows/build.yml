@@ -66,20 +66,24 @@ jobs:
     - name: Deploy Qt runtime
       run: |
         set -e
-
         mkdir -p deploy
-
-        # 找 exe（避免 release/debug 不确定）
-        EXE=$(find build -name "*.exe" | head -n 1)
-
+        
+        # 1. 寻找生成的 exe
+        EXE=$(find build -name "*.exe" | grep -i "release" | head -n 1)
+        if [ -z "$EXE" ]; then
+          EXE=$(find build -name "*.exe" | head -n 1)
+        fi
+        
         echo "Found exe: $EXE"
-
         cp "$EXE" deploy/
 
-        export PATH=/mingw64/bin:$PATH
-        export QT_PLUGIN_PATH=/mingw64/share/qt5/plugins
+        # 2. 设置环境变量
+        export PATH="/mingw64/bin:$PATH"
+        
+        # 3. 运行部署工具
+        # 尝试标准名称，如果还报错，可以使用 `which windeployqt` 诊断
+        /mingw64/bin/windeployqt.exe --release --compiler-runtime deploy/*.exe
 
-        /mingw64/bin/windeployqt-qt5.exe --release deploy/*.exe
 
     # =========================
     # 4. Package
