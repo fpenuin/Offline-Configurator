@@ -57,7 +57,7 @@ jobs:
         #EXE=$(find build -name "*.exe" | grep -i "release" | head -n 1)
         #[ -z "$EXE" ] && EXE=$(find build -name "*.exe" | head -n 1)
         #cp "$EXE" deploy/
-        cp build\release\SerialPortConnector.exe deploy\
+        cp build/release/SerialPortConnector.exe deploy/
 
         export PATH="/mingw64/bin:$PATH"
         
