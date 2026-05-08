@@ -23,15 +23,11 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v4
 
-    # =========================
-    # 1. Setup MSYS2 + toolchain
-    # =========================
     - name: Setup MSYS2
       uses: msys2/setup-msys2@v2
       with:
         msystem: MINGW64
         update: true
-        path-type: inherit  # 强制继承并扩展 Windows PATH
         install: >
           mingw-w64-x86_64-gcc
           mingw-w64-x86_64-qt5-base
@@ -41,31 +37,19 @@ jobs:
           mingw-w64-x86_64-cmake
           mingw-w64-x86_64-angleproject
           zip
-    # =========================
-    # 2. Build
-    # =========================
+
     - name: Build
-      shell: msys2 {0}
       run: |
-        # 1. 导出路径（保持不变）
         export PATH="/mingw64/bin:/usr/bin:$PATH"
-        
-        # 2. 检查版本（改用 qmake-qt5）
         qmake-qt5 -v
     
         mkdir -p build
         cd build
-        
-        # 3. 使用 qmake-qt5 生成 Makefile
+  
         qmake-qt5 ../SerialPortConnector.pro CONFIG+=release
-        
-        # 4. 编译
         mingw32-make -j$(nproc)
 
-    # =========================
-    # 3. Deploy (关键)
-    # =========================
-    - name: Deploy Qt runtime
+    - name: Deploy
       run: |
         set -e
         mkdir -p deploy
@@ -76,7 +60,6 @@ jobs:
 
         export PATH="/mingw64/bin:$PATH"
         
-        # 尝试更彻底的禁用标志：--no-opengl
         /mingw64/bin/windeployqt-qt5.exe \
           --release \
           --compiler-runtime \
@@ -85,30 +68,8 @@ jobs:
           --no-translations \
           deploy/*.exe
 
-    # =========================
-    # 4. Package
-    # =========================
-    - name: Package
-      run: |
-        set -e
-        cd deploy
-        zip -r ../SerialPortConnector-Windows.zip .
-
-    # =========================
-    # 5. Upload artifact
-    # =========================
     - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:
         name: SerialPortConnector-Windows
-        path: SerialPortConnector-Windows.zip
-
-    # =========================
-    # 6. Create GitHub Release
-    # =========================
-    - name: Release
-      uses: softprops/action-gh-release@v1
-      with:
-        files: SerialPortConnector-Windows.zip
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        path: deploy/
