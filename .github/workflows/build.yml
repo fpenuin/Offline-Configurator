@@ -32,31 +32,25 @@ jobs:
         msystem: MINGW64  # <--- 关键：指定使用 MINGW64 环境
         update: true
         install: >
-          mingw-w64-x86_64-toolchain
-          mingw-w64-x86_64-qt5
-          mingw-w64-x86_64-qt5-base
-          mingw-w64-x86_64-qt5-tools
-          mingw-w64-x86_64-make
-          mingw-w64-x86_64-cmake
-          mingw-w64-x86_64-pkgconf
-          zip
-
+            mingw-w64-x86_64-toolchain
+            mingw-w64-x86_64-qt5-base
+            mingw-w64-x86_64-qt5-serialport
+            mingw-w64-x86_64-qt5-tools
+            mingw-w64-x86_64-make
+            mingw-w64-x86_64-cmake
     # =========================
     # 2. Build
     # =========================
     - name: Build
       run: |
-              set -e
-              # 验证路径
-              echo "MSYSTEM is $MSYSTEM"
-              which qmake
-              qmake -v
-          
-              mkdir -p build
-              cd build
-              # 明确使用 MinGW 的 make
-              qmake ../SerialPortConnector.pro CONFIG+=release
-              mingw32-make -j$(nproc)
+        # 强制检查文件是否存在，防止 which 缓存失效
+        ls -l /mingw64/bin/qmake.exe || echo "QMAKE NOT FOUND IN BIN"
+        
+        # 使用绝对路径确保能运行
+        export PATH="/mingw64/bin:$PATH"
+        
+        /mingw64/bin/qmake ../SerialPortConnector.pro CONFIG+=release
+        mingw32-make -j$(nproc)
 
     # =========================
     # 3. Deploy (关键)
