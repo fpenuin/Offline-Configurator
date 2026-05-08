@@ -57,8 +57,24 @@ jobs:
           --no-opengl-sw \
           --no-translations \
           deploy/*.exe
-        cp /mingw64/bin/lib*.dll ${{ github.workspace }}/deploy/ || true
-
+          
+        echo "Copying missing runtime libraries..."
+        cp /mingw64/bin/libmd4c.dll deploy/ || true
+        cp /mingw64/bin/libharfbuzz-0.dll deploy/ || true
+        cp /mingw64/bin/libdouble-conversion.dll deploy/ || true
+        cp /mingw64/bin/libicuin*.dll deploy/ || true
+        cp /mingw64/bin/libicuuc*.dll deploy/ || true
+        cp /mingw64/bin/libicudt*.dll deploy/ || true
+        cp /mingw64/bin/libpcre2-16-0.dll deploy/ || true
+        cp /mingw64/bin/libzstd.dll deploy/ || true
+        cp /mingw64/bin/libgraphite2.dll deploy/ || true
+        cp /mingw64/bin/libintl-8.dll deploy/ || true
+        cp /mingw64/bin/libiconv-2.dll deploy/ || true
+        cp /mingw64/bin/libglib-2.0-0.dll deploy/ || true
+        cp /mingw64/bin/libpng16-16.dll deploy/ || true
+        cp /mingw64/bin/libfreetype-6.dll deploy/ || true
+        cp /mingw64/bin/libbz2-1.dll deploy/ || true
+        
     - name: Upload Windows artifact
       uses: actions/upload-artifact@v4
       with:
