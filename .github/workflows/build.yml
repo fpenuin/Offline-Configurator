@@ -15,36 +15,48 @@ jobs:
   build-windows:
     runs-on: windows-latest
 
-    steps:
-    - uses: actions/checkout@v4
+    defaults:
+      run:
+        shell: msys2 {0}
 
-    - name: Install Qt
-      uses: jurplel/install-qt-action@v4
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Setup MSYS2
+      uses: msys2/setup-msys2@v2
       with:
-        version: '6.6.2'
-        host: 'windows'
-        target: 'desktop'
-        arch: 'win64_mingw'
-        modules: 'qtserialport'
-        tools: 'tools_mingw90'
+        msystem: MINGW64
+        install: >
+          mingw-w64-x86_64-gcc
+          mingw-w64-x86_64-qt5-base
+          mingw-w64-x86_64-qt5-serialport
+          mingw-w64-x86_64-qt5-tools
+          mingw-w64-x86_64-angleproject
+          mingw-w64-x86_64-make
         cache: true
 
     - name: Build
-      shell: cmd
       run: |
-        set PATH=%IQTA_TOOLS%\mingw1120_64\bin;%PATH%
-        mkdir build
+        export PATH="/mingw64/bin:/usr/bin:$PATH"
+        mkdir -p build
         cd build
-        qmake ..\SerialPortConnector.pro CONFIG+=release
-        mingw32-make -j4
+        qmake -v #Qt 5.15.x using MSYS2 MinGW
+        qmake-qt5 ../SerialPortConnector.pro CONFIG+=release
+        mingw32-make -j$(nproc)
 
     - name: Deploy
-      shell: cmd
       run: |
-        mkdir deploy
-        copy build\release\SerialPortConnector.exe deploy\
-        set PATH=%IQTA_TOOLS%\mingw1120_64\bin;%PATH%
-        windeployqt --release deploy\SerialPortConnector.exe
+        mkdir -p deploy
+        cp build/release/SerialPortConnector.exe deploy/
+        export PATH="/mingw64/bin:$PATH"
+        windeployqt-qt5.exe \
+          --release \
+          --compiler-runtime \
+          --no-opengl \
+          --no-opengl-sw \
+          --no-translations \
+          deploy/*.exe
 
     - name: Upload Windows artifact
       uses: actions/upload-artifact@v4
@@ -91,11 +103,11 @@ jobs:
     - name: Install Qt
       uses: jurplel/install-qt-action@v4
       with:
-        version: '6.6.2'
+        version: '5.15.2'
         host: 'linux'
         target: 'desktop'
         arch: 'gcc_64'
-        modules: 'qtserialport'
+        # modules: 'qtserialport'
         cache: true
 
     - name: Build
