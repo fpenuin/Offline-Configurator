@@ -27,40 +27,33 @@ jobs:
       uses: msys2/setup-msys2@v2
       with:
         msystem: MINGW64
-        update: true
+        # update: true
         install: >
-          mingw-w64-x86_64-gcc
-          mingw-w64-x86_64-qt5-base
-          mingw-w64-x86_64-qt5-serialport
-          mingw-w64-x86_64-qt5-tools
+          # mingw-w64-x86_64-gcc
+          # mingw-w64-x86_64-qt5-base
+          # mingw-w64-x86_64-qt5-serialport
+          # mingw-w64-x86_64-qt5-tools
+          # mingw-w64-x86_64-make
+          # mingw-w64-x86_64-cmake
+          # mingw-w64-x86_64-angleproject
+          mingw-w64-x86_64-toolchain
+          mingw-w64-x86_64-qt5
           mingw-w64-x86_64-make
-          mingw-w64-x86_64-cmake
-          mingw-w64-x86_64-angleproject
-          zip
+        cache: true
 
     - name: Build
       run: |
         export PATH="/mingw64/bin:/usr/bin:$PATH"
-        qmake-qt5 -v
-    
         mkdir -p build
         cd build
-  
         qmake-qt5 ../SerialPortConnector.pro CONFIG+=release
         mingw32-make -j$(nproc)
 
     - name: Deploy
       run: |
-        #set -e
         mkdir -p deploy
-
-        #EXE=$(find build -name "*.exe" | grep -i "release" | head -n 1)
-        #[ -z "$EXE" ] && EXE=$(find build -name "*.exe" | head -n 1)
-        #cp "$EXE" deploy/
         cp build/release/SerialPortConnector.exe deploy/
-
         export PATH="/mingw64/bin:$PATH"
-        
         windeployqt-qt5.exe \
           --release \
           --compiler-runtime \
