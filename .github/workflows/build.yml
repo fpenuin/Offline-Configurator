@@ -39,6 +39,7 @@ jobs:
           mingw-w64-x86_64-qt5-tools
           mingw-w64-x86_64-make
           mingw-w64-x86_64-cmake
+          mingw-w64-x86_64-angleproject
           zip
     # =========================
     # 2. Build
@@ -75,14 +76,13 @@ jobs:
 
         export PATH="/mingw64/bin:$PATH"
         
-        # 核心改动：添加 --no-opengl-sw 参数绕过缺失的 GLES DLL
-        # 添加 --compiler-runtime 确保带上 libgcc/libstdc++
+        # 尝试更彻底的禁用标志：--no-opengl
         /mingw64/bin/windeployqt-qt5.exe \
           --release \
           --compiler-runtime \
+          --no-opengl \
           --no-opengl-sw \
           --no-translations \
-          --verbose 1 \
           deploy/*.exe
 
     # =========================
