@@ -41,7 +41,7 @@ jobs:
         export PATH="/mingw64/bin:/usr/bin:$PATH"
         mkdir -p build
         cd build
-        qmake -v #Qt 5.15.x using MSYS2 MinGW
+        qmake-qt5 -v #Qt 5.15.x using MSYS2 MinGW
         qmake-qt5 ../SerialPortConnector.pro CONFIG+=release
         mingw32-make -j$(nproc)
 
