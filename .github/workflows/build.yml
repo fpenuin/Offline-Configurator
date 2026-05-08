@@ -45,22 +45,20 @@ jobs:
     - name: Build
       shell: msys2 {0}
       run: |
-        # 1. 强力注入 MinGW64 二进制路径
-        # 在 MSYS2 中，/mingw64 映射到物理路径，但在 shell 中必须在 PATH 前端
+        # 1. 导出路径（保持不变）
         export PATH="/mingw64/bin:/usr/bin:$PATH"
         
-        # 2. 诊断：打印当前 PATH 和 qmake 的实际位置
-        echo "Current PATH: $PATH"
-        find /mingw64/bin -name "qmake*"
-        
-        # 3. 验证并执行
-        qmake -v
-        
+        # 2. 检查版本（改用 qmake-qt5）
+        qmake-qt5 -v
+    
         mkdir -p build
         cd build
-        # 使用全路径执行 qmake 确保万无一失
-        /mingw64/bin/qmake ../SerialPortConnector.pro CONFIG+=release
-        /mingw64/bin/mingw32-make -j$(nproc)
+        
+        # 3. 使用 qmake-qt5 生成 Makefile
+        qmake-qt5 ../SerialPortConnector.pro CONFIG+=release
+        
+        # 4. 编译
+        mingw32-make -j$(nproc)
 
     # =========================
     # 3. Deploy (关键)
@@ -81,7 +79,7 @@ jobs:
         export PATH=/mingw64/bin:$PATH
         export QT_PLUGIN_PATH=/mingw64/share/qt5/plugins
 
-        windeployqt.exe --release deploy/*.exe
+        /mingw64/bin/windeployqt-qt5.exe --release deploy/*.exe
 
     # =========================
     # 4. Package
