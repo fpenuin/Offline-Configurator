@@ -57,6 +57,7 @@ jobs:
           --no-opengl-sw \
           --no-translations \
           deploy/*.exe
+        cp /mingw64/bin/lib*.dll ${{ github.workspace }}/deploy/ || true
 
     - name: Upload Windows artifact
       uses: actions/upload-artifact@v4
