@@ -29,28 +29,38 @@ jobs:
     - name: Setup MSYS2
       uses: msys2/setup-msys2@v2
       with:
-        msystem: MINGW64  # <--- 关键：指定使用 MINGW64 环境
+        msystem: MINGW64
         update: true
+        path-type: inherit  # 强制继承并扩展 Windows PATH
         install: >
-            mingw-w64-x86_64-toolchain
-            mingw-w64-x86_64-qt5-base
-            mingw-w64-x86_64-qt5-serialport
-            mingw-w64-x86_64-qt5-tools
-            mingw-w64-x86_64-make
-            mingw-w64-x86_64-cmake
+          mingw-w64-x86_64-gcc
+          mingw-w64-x86_64-qt5-base
+          mingw-w64-x86_64-qt5-serialport
+          mingw-w64-x86_64-make
+          mingw-w64-x86_64-cmake
+          zip
     # =========================
     # 2. Build
     # =========================
     - name: Build
+      shell: msys2 {0}
       run: |
-        # 强制检查文件是否存在，防止 which 缓存失效
-        ls -l /mingw64/bin/qmake.exe || echo "QMAKE NOT FOUND IN BIN"
+        # 1. 强力注入 MinGW64 二进制路径
+        # 在 MSYS2 中，/mingw64 映射到物理路径，但在 shell 中必须在 PATH 前端
+        export PATH="/mingw64/bin:/usr/bin:$PATH"
         
-        # 使用绝对路径确保能运行
-        export PATH="/mingw64/bin:$PATH"
+        # 2. 诊断：打印当前 PATH 和 qmake 的实际位置
+        echo "Current PATH: $PATH"
+        find /mingw64/bin -name "qmake*"
         
+        # 3. 验证并执行
+        qmake -v
+        
+        mkdir -p build
+        cd build
+        # 使用全路径执行 qmake 确保万无一失
         /mingw64/bin/qmake ../SerialPortConnector.pro CONFIG+=release
-        mingw32-make -j$(nproc)
+        /mingw64/bin/mingw32-make -j$(nproc)
 
     # =========================
     # 3. Deploy (关键)
