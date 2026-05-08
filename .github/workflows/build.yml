@@ -29,6 +29,7 @@ jobs:
     - name: Setup MSYS2
       uses: msys2/setup-msys2@v2
       with:
+        msystem: MINGW64  # <--- 关键：指定使用 MINGW64 环境
         update: true
         install: >
           mingw-w64-x86_64-toolchain
@@ -44,20 +45,18 @@ jobs:
     # 2. Build
     # =========================
     - name: Build
-      shell: msys2 {0}
       run: |
-        set -e
-    
-        echo "PATH=$PATH"
-    
-        which qmake
-        qmake -v
-    
-        mkdir -p build
-        cd build
-    
-        qmake ../SerialPortConnector.pro CONFIG+=release
-        mingw32-make -j$(nproc)
+              set -e
+              # 验证路径
+              echo "MSYSTEM is $MSYSTEM"
+              which qmake
+              qmake -v
+          
+              mkdir -p build
+              cd build
+              # 明确使用 MinGW 的 make
+              qmake ../SerialPortConnector.pro CONFIG+=release
+              mingw32-make -j$(nproc)
 
     # =========================
     # 3. Deploy (关键)
