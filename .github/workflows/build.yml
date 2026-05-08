@@ -2,9 +2,9 @@ name: Build SerialPortConnector (Windows Only)
 
 on:
   push:
-    branches: [ main, master ]
+    branches: [ fpenuin-patch-1 ]
   pull_request:
-    branches: [ main, master ]
+    branches: [ fpenuin-patch-1 ]
   workflow_dispatch:
 
 concurrency:
