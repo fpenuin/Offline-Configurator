@@ -51,20 +51,39 @@ jobs:
         cp build/release/SerialPortConnector.exe deploy/
         export PATH="/mingw64/bin:$PATH"
         
-        # 1. 先运行基础部署（处理 platforms/ 插件等文件夹）
+        # 1. 让 windeployqt 处理 Qt 插件（platforms, styles 等）
         windeployqt-qt5.exe --release --no-compiler-runtime --no-opengl-sw --no-translations deploy/*.exe
 
-        # 2. 自动化依赖提取 (核心逻辑)
-        # 使用 ldd 递归查找所有位于 /mingw64/bin 下的依赖库，并拷贝到 deploy 目录
-        echo "Searching for all dynamic dependencies..."
+        # 2. 递归提取所有 MinGW DLL 依赖
+        echo "Starting recursive dependency extraction..."
         
-        # 这是一个循环逻辑：找出 exe 依赖的所有 mingw64 路径下的 dll，并复制
-        # 我们对 exe 和刚才 windeployqt 拷进去的 qt dll 都做一次检查
-        FILES_TO_CHECK=$(find deploy -name "*.exe" -o -name "*.dll")
-        
-        for file in $FILES_TO_CHECK; do
-            ldd "$file" | grep "/mingw64/bin/" | awk '{print $3}' | xargs -I {} cp -n {} deploy/
+        # 初始检查列表：exe 和已经被拷入的 Qt dll
+        cp /mingw64/bin/libwinpthread-1.dll deploy/ -n # 强制补一个基础库
+
+        MAX_ITERATIONS=5
+        for i in $(seq 1 $MAX_ITERATIONS); do
+            echo "Iteration $i: Checking for missing dependencies..."
+            MISSING_DLLS=$(ldd deploy/*.exe deploy/*.dll 2>/dev/null | grep "not found" | awk '{print $1}' | sort -u)
+            
+            # 如果没有缺失的了，提前退出
+            if [ -z "$MISSING_DLLS" ]; then
+                echo "All dependencies resolved."
+                break
+            fi
+            
+            for dll in $MISSING_DLLS; do
+                if [ -f "/mingw64/bin/$dll" ]; then
+                    echo "Adding: $dll"
+                    cp "/mingw64/bin/$dll" deploy/
+                else
+                    echo "Warning: $dll not found in /mingw64/bin/"
+                fi
+            done
         done
+
+        # 3. 最后检查一下 libgcc 和 libstdc++ (windeployqt 有时会漏)
+        cp /mingw64/bin/libgcc_s_seh-1.dll deploy/ -n
+        cp /mingw64/bin/libstdc++-6.dll deploy/ -n
         
     - name: Upload Windows artifact
       uses: actions/upload-artifact@v4
