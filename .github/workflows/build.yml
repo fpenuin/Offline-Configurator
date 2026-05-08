@@ -44,17 +44,18 @@ jobs:
     # 2. Build
     # =========================
     - name: Build
+      shell: msys2 {0}
       run: |
         set -e
-
-        export PATH=/mingw64/bin:$PATH
+    
+        echo "PATH=$PATH"
     
         which qmake
         qmake -v
-
+    
         mkdir -p build
         cd build
-
+    
         qmake ../SerialPortConnector.pro CONFIG+=release
         mingw32-make -j$(nproc)
 
