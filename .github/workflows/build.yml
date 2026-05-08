@@ -53,9 +53,7 @@ jobs:
         windeployqt-qt5.exe \
           --release \
           --compiler-runtime \
-          --no-opengl \
           --no-opengl-sw \
-          --no-translations \
           deploy/*.exe
           
         echo "Copying missing runtime libraries..."
@@ -74,6 +72,9 @@ jobs:
         cp /mingw64/bin/libpng16-16.dll deploy/ || true
         cp /mingw64/bin/libfreetype-6.dll deploy/ || true
         cp /mingw64/bin/libbz2-1.dll deploy/ || true
+        cp /mingw64/bin/zlib1.dll deploy/
+        cp /mingw64/bin/libbrotlidec.dll deploy/
+        cp /mingw64/bin/libbrotlicommon.dll deploy/ || true
         
     - name: Upload Windows artifact
       uses: actions/upload-artifact@v4
