@@ -36,6 +36,7 @@ jobs:
           mingw-w64-x86_64-gcc
           mingw-w64-x86_64-qt5-base
           mingw-w64-x86_64-qt5-serialport
+          mingw-w64-x86_64-qt5-tools
           mingw-w64-x86_64-make
           mingw-w64-x86_64-cmake
           zip
@@ -70,20 +71,27 @@ jobs:
         
         # 1. 寻找生成的 exe
         EXE=$(find build -name "*.exe" | grep -i "release" | head -n 1)
-        if [ -z "$EXE" ]; then
-          EXE=$(find build -name "*.exe" | head -n 1)
-        fi
+        [ -z "$EXE" ] && EXE=$(find build -name "*.exe" | head -n 1)
         
         echo "Found exe: $EXE"
         cp "$EXE" deploy/
 
-        # 2. 设置环境变量
-        export PATH="/mingw64/bin:$PATH"
+        # 2. 核心：全系统搜索 windeployqt
+        # 搜索所有包含 windeploy 关键字的可执行文件
+        WINDEPLOY=$(find /mingw64/ -name "windeployqt*" -type f | head -n 1)
         
-        # 3. 运行部署工具
-        # 尝试标准名称，如果还报错，可以使用 `which windeployqt` 诊断
-        /mingw64/bin/windeployqt.exe --release --compiler-runtime deploy/*.exe
+        if [ -z "$WINDEPLOY" ]; then
+          echo "ERROR: windeployqt not found in /mingw64/"
+          ls -R /mingw64/bin | grep deploy
+          exit 1
+        fi
 
+        echo "Using deploy tool: $WINDEPLOY"
+
+        # 3. 执行部署
+        # 注入 PATH 是为了让 windeployqt 能找到它依赖的 DLL
+        export PATH="/mingw64/bin:$PATH"
+        "$WINDEPLOY" --release --compiler-runtime --verbose 1 deploy/*.exe
 
     # =========================
     # 4. Package
