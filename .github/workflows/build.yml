@@ -55,37 +55,53 @@ jobs:
         windeployqt-qt5.exe --release --no-compiler-runtime --no-opengl-sw --no-translations deploy/*.exe || echo "windeployqt warning"
 
         # 2. 递归补全 MinGW 缺失的依赖
-        echo "Starting recursive dependency check..."
+        # echo "Starting recursive dependency check..."
         
-        # 核心：使用循环直到没有 'not found'
-        for i in {1..5}; do
-          echo "Iteration $i"
-          # 找出当前所有缺失的 dll 名
-          # 使用 || true 防止因为 grep 没找到东西而报错
-          MISSING=$(ldd deploy/*.exe deploy/*.dll 2>/dev/null | grep "not found" | awk '{print $1}' | sort -u) || true
+        # # 核心：使用循环直到没有 'not found'
+        # for i in {1..5}; do
+        #   echo "Iteration $i"
+        #   # 找出当前所有缺失的 dll 名
+        #   # 使用 || true 防止因为 grep 没找到东西而报错
+        #   MISSING=$(ldd deploy/*.exe deploy/*.dll 2>/dev/null | grep "not found" | awk '{print $1}' | sort -u) || true
           
-          if [ -z "$MISSING" ]; then
-            echo "All dependencies found."
-            break
-          fi
+        #   if [ -z "$MISSING" ]; then
+        #     echo "All dependencies found."
+        #     break
+        #   fi
           
-          for dll in $MISSING; do
-            if [ -f "/mingw64/bin/$dll" ]; then
-              echo "Fixing: $dll"
-              cp "/mingw64/bin/$dll" deploy/
-            fi
-          done
-        done
+        #   for dll in $MISSING; do
+        #     if [ -f "/mingw64/bin/$dll" ]; then
+        #       echo "Fixing: $dll"
+        #       cp "/mingw64/bin/$dll" deploy/
+        #     fi
+        #   done
+        # done
 
-        # 3. 强力补丁：手动补上那些 windeployqt 经常搞丢的底层库
-        # 这些库是 MinGW 程序运行的“基石”
         EXTRA_LIBS=(
-          "libwinpthread-1.dll"
-          "libgcc_s_seh-1.dll"
-          "libstdc++-6.dll"
-          "zlib1.dll"
-          "libpcre2-8-0.dll"
-          "libpcre2-16-0.dll"
+            "libwinpthread-1.dll"
+            "libgcc_s_seh-1.dll"
+            "libstdc++-6.dll"
+            "libicuin*.dll"        
+            "libicuuc*.dll"
+            "libicudt*.dll"
+            "libpcre2-8-0.dll"
+            "libpcre2-16-0.dll"
+            "libharfbuzz-0.dll"
+            "libmd4c.dll"
+            "libiconv-2.dll"
+            "libintl-8.dll"
+            "libdouble-conversion.dll"
+            "libfreetype-6.dll"
+            "libgraphite2.dll"
+            "libpng16-16.dll"
+            "libbz2-1.dll"
+            "libexpat-1.dll"       
+            "zlib1.dll"
+            "libzstd.dll"
+            "liblzma-5.dll" 
+            "libbrotlidec.dll"
+            "libbrotlicommon.dll"
+            "libglib-2.0-0.dll"
         )
         
         for lib in "${EXTRA_LIBS[@]}"; do
