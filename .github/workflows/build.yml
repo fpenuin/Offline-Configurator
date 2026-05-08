@@ -15,35 +15,87 @@ jobs:
   build-windows:
     runs-on: windows-latest
 
+    defaults:
+      run:
+        shell: msys2 {0}
+
     steps:
-    - uses: actions/checkout@v4
-    
-    - uses: jurplel/install-qt-action@v4
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    # =========================
+    # 1. Setup MSYS2 + toolchain
+    # =========================
+    - name: Setup MSYS2
+      uses: msys2/setup-msys2@v2
       with:
-        version: '5.15.2'
-        host: 'windows'
-        target: 'desktop'
-        cache: true
-    
-    - uses: ilammy/msvc-dev-cmd@v1
-    
+        update: true
+        install: >
+          mingw-w64-x86_64-toolchain
+          mingw-w64-x86_64-qt5
+          mingw-w64-x86_64-make
+          mingw-w64-x86_64-cmake
+          mingw-w64-x86_64-pkgconf
+          zip
+
+    # =========================
+    # 2. Build
+    # =========================
     - name: Build
-      shell: cmd
       run: |
-        mkdir build
+        set -e
+
+        mkdir -p build
         cd build
-        qmake ..\SerialPortConnector.pro CONFIG+=release
-        nmake
 
-    - name: Deploy
-      shell: cmd
+        qmake ../SerialPortConnector.pro CONFIG+=release
+        mingw32-make -j$(nproc)
+
+    # =========================
+    # 3. Deploy (关键)
+    # =========================
+    - name: Deploy Qt runtime
       run: |
-        mkdir deploy
-        copy build\release\SerialPortConnector.exe deploy\
-        windeployqt --release deploy\SerialPortConnector.exe
+        set -e
 
-    - name: Upload Windows artifact
+        mkdir -p deploy
+
+        # 找 exe（避免 release/debug 不确定）
+        EXE=$(find build -name "*.exe" | head -n 1)
+
+        echo "Found exe: $EXE"
+
+        cp "$EXE" deploy/
+
+        export PATH=/mingw64/bin:$PATH
+        export QT_PLUGIN_PATH=/mingw64/share/qt5/plugins
+
+        windeployqt.exe --release deploy/*.exe
+
+    # =========================
+    # 4. Package
+    # =========================
+    - name: Package
+      run: |
+        set -e
+        cd deploy
+        zip -r ../SerialPortConnector-Windows.zip .
+
+    # =========================
+    # 5. Upload artifact
+    # =========================
+    - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:
         name: SerialPortConnector-Windows
-        path: deploy/
+        path: SerialPortConnector-Windows.zip
+
+    # =========================
+    # 6. Create GitHub Release
+    # =========================
+    - name: Release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: SerialPortConnector-Windows.zip
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
