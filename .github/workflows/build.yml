@@ -50,32 +50,8 @@ jobs:
         mkdir -p deploy
         cp build/release/SerialPortConnector.exe deploy/
         export PATH="/mingw64/bin:$PATH"
-        
-        # 1. 运行 windeployqt
-        windeployqt-qt5.exe --release --no-compiler-runtime --no-opengl-sw --no-translations deploy/*.exe || echo "windeployqt warning"
 
-        # 2. 递归补全 MinGW 缺失的依赖
-        # echo "Starting recursive dependency check..."
-        
-        # # 核心：使用循环直到没有 'not found'
-        # for i in {1..5}; do
-        #   echo "Iteration $i"
-        #   # 找出当前所有缺失的 dll 名
-        #   # 使用 || true 防止因为 grep 没找到东西而报错
-        #   MISSING=$(ldd deploy/*.exe deploy/*.dll 2>/dev/null | grep "not found" | awk '{print $1}' | sort -u) || true
-          
-        #   if [ -z "$MISSING" ]; then
-        #     echo "All dependencies found."
-        #     break
-        #   fi
-          
-        #   for dll in $MISSING; do
-        #     if [ -f "/mingw64/bin/$dll" ]; then
-        #       echo "Fixing: $dll"
-        #       cp "/mingw64/bin/$dll" deploy/
-        #     fi
-        #   done
-        # done
+        windeployqt-qt5.exe --release --no-compiler-runtime --no-opengl-sw --no-translations deploy/*.exe || echo "windeployqt warning"
 
         EXTRA_LIBS=(
             "libwinpthread-1.dll"
@@ -104,16 +80,14 @@ jobs:
             "libglib-2.0-0.dll"
         )
         
+        echo "Applying heavy-duty patches with wildcard support..."
         for lib in "${EXTRA_LIBS[@]}"; do
-          if [ -f "/mingw64/bin/$lib" ]; then
-            cp -n "/mingw64/bin/$lib" deploy/
-          fi
+          find /mingw64/bin -maxdepth 1 -name "$lib" -exec cp -n {} deploy/ \; 2>/dev/null || true
         done
         
         echo "Final check:"
         ls deploy/
 
-        
     - name: Upload Windows artifact
       uses: actions/upload-artifact@v4
       with:
