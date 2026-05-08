@@ -29,13 +29,6 @@ jobs:
         msystem: MINGW64
         # update: true
         install: >
-          # mingw-w64-x86_64-gcc
-          # mingw-w64-x86_64-qt5-base
-          # mingw-w64-x86_64-qt5-serialport
-          # mingw-w64-x86_64-qt5-tools
-          # mingw-w64-x86_64-make
-          # mingw-w64-x86_64-cmake
-          # mingw-w64-x86_64-angleproject
           mingw-w64-x86_64-toolchain
           mingw-w64-x86_64-qt5
           mingw-w64-x86_64-make
